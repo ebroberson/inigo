@@ -664,13 +664,18 @@ var _ = Describe("Executor/Garden", func() {
 
 					Context("after running succeeds", func() {
 						Describe("deleting the container", func() {
-							It("works", func(done Done) {
-								defer close(done)
+							It("works", func() {
+								done := make(chan interface{})
+								timeout := 5
+								go func() {
+									defer close(done)
 
-								Eventually(containerStatePoller(guid)).Should(Equal(executor.StateCompleted))
+									Eventually(containerStatePoller(guid)).Should(Equal(executor.StateCompleted))
 
-								err := executorClient.DeleteContainer(logger, guid)
-								Expect(err).NotTo(HaveOccurred())
+									err := executorClient.DeleteContainer(logger, guid)
+									Expect(err).NotTo(HaveOccurred())
+								}()
+								Eventually(done, timeout).Should(BeClosed())
 							}, 5)
 						})
 					})
